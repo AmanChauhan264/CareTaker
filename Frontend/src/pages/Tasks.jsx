@@ -1,18 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
-function getToday() {
-  const date = new Date();
-
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
-
-function Dashboard() {
-  const today = getToday();
+function Tasks() {
+  const today = new Date().toISOString().split("T")[0];
 
   const [tasks, setTasks] = useState([
     {
@@ -36,15 +26,9 @@ function Dashboard() {
       time: "10:00",
       completed: true,
     },
-    {
-      id: 4,
-      title: "Read for 30 minutes",
-      date: today,
-      time: "22:00",
-      completed: false,
-    },
   ]);
 
+  const [filter, setFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
 
   const [newTask, setNewTask] = useState({
@@ -98,17 +82,12 @@ function Dashboard() {
     setTasks(tasks.filter((task) => task.id !== id));
   };
 
-  const todayTasks = tasks.filter(
-    (task) => task.date === today
-  );
+  const filteredTasks = tasks.filter((task) => {
+    if (filter === "pending") return !task.completed;
+    if (filter === "completed") return task.completed;
 
-  const upcomingTasks = tasks.filter(
-    (task) => task.date > today
-  );
-
-  const completedTasks = tasks.filter(
-    (task) => task.completed
-  );
+    return true;
+  });
 
   const formatDate = (date) => {
     return new Date(date + "T00:00:00").toLocaleDateString(
@@ -147,14 +126,14 @@ function Dashboard() {
 
           <Link
             to="/dashboard"
-            className="block px-4 py-3 rounded-lg bg-blue-50 text-blue-600 font-medium"
+            className="block px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-100"
           >
             Dashboard
           </Link>
 
           <Link
             to="/tasks"
-            className="block px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-100"
+            className="block px-4 py-3 rounded-lg bg-blue-50 text-blue-600 font-medium"
           >
             Tasks
           </Link>
@@ -191,11 +170,11 @@ function Dashboard() {
 
           <div>
             <h2 className="text-3xl font-bold text-slate-800">
-              Good Evening 👋
+              My Tasks
             </h2>
 
             <p className="text-slate-500 mt-1">
-              Here's what's happening today.
+              Manage everything you need to get done.
             </p>
           </div>
 
@@ -208,127 +187,69 @@ function Dashboard() {
 
         </div>
 
-        {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+        {/* Filters */}
+        <div className="bg-white rounded-xl shadow-sm p-4 mt-8 flex gap-3">
 
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <p className="text-slate-500">
-              Today's Tasks
-            </p>
+          <button
+            onClick={() => setFilter("all")}
+            className={`px-4 py-2 rounded-lg ${
+              filter === "all"
+                ? "bg-blue-600 text-white"
+                : "bg-slate-100 text-slate-600"
+            }`}
+          >
+            All
+          </button>
 
-            <h3 className="text-3xl font-bold text-slate-800 mt-2">
-              {todayTasks.length}
-            </h3>
-          </div>
+          <button
+            onClick={() => setFilter("pending")}
+            className={`px-4 py-2 rounded-lg ${
+              filter === "pending"
+                ? "bg-blue-600 text-white"
+                : "bg-slate-100 text-slate-600"
+            }`}
+          >
+            Pending
+          </button>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <p className="text-slate-500">
-              Completed
-            </p>
-
-            <h3 className="text-3xl font-bold text-green-600 mt-2">
-              {completedTasks.length}
-            </h3>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <p className="text-slate-500">
-              Upcoming Tasks
-            </p>
-
-            <h3 className="text-3xl font-bold text-blue-600 mt-2">
-              {upcomingTasks.length}
-            </h3>
-          </div>
+          <button
+            onClick={() => setFilter("completed")}
+            className={`px-4 py-2 rounded-lg ${
+              filter === "completed"
+                ? "bg-blue-600 text-white"
+                : "bg-slate-100 text-slate-600"
+            }`}
+          >
+            Completed
+          </button>
 
         </div>
 
-        {/* Today's Tasks */}
-        <div className="bg-white rounded-xl p-6 shadow-sm mt-8">
+        {/* Task List */}
+        <div className="bg-white rounded-xl shadow-sm mt-6 p-6">
 
           <h3 className="text-xl font-semibold text-slate-800">
-            Today's Tasks
+            {filter === "all"
+              ? "All Tasks"
+              : filter === "pending"
+              ? "Pending Tasks"
+              : "Completed Tasks"}
           </h3>
 
-          <div className="mt-5 space-y-4">
+          <div className="mt-5 space-y-3">
 
-            {todayTasks.length === 0 ? (
-              <p className="text-slate-500">
-                No tasks for today.
+            {filteredTasks.length === 0 ? (
+              <p className="text-slate-500 py-6 text-center">
+                No tasks found.
               </p>
             ) : (
-              todayTasks.map((task) => (
+              filteredTasks.map((task) => (
                 <div
                   key={task.id}
-                  className="flex items-center justify-between pb-3"
+                  className="flex items-center justify-between p-4 rounded-lg bg-slate-50"
                 >
-
-                  <div className="flex items-center gap-3">
-
-                    <input
-                      type="checkbox"
-                      checked={task.completed}
-                      onChange={() => toggleTask(task.id)}
-                      className="w-4 h-4"
-                    />
-
-                    <span
-                      className={
-                        task.completed
-                          ? "line-through text-slate-400"
-                          : "text-slate-700"
-                      }
-                    >
-                      {task.title}
-                    </span>
-
-                  </div>
 
                   <div className="flex items-center gap-4">
-
-                    {task.time && (
-                      <span className="text-sm text-slate-400">
-                        {formatTime(task.time)}
-                      </span>
-                    )}
-
-                    <button
-                      onClick={() => deleteTask(task.id)}
-                      className="text-red-500 text-sm hover:text-red-700"
-                    >
-                      Delete
-                    </button>
-
-                  </div>
-
-                </div>
-              ))
-            )}
-
-          </div>
-        </div>
-
-        {/* Upcoming Tasks */}
-        <div className="bg-white rounded-xl p-6 shadow-sm mt-8">
-
-          <h3 className="text-xl font-semibold text-slate-800">
-            Upcoming Tasks
-          </h3>
-
-          <div className="mt-5 space-y-4">
-
-            {upcomingTasks.length === 0 ? (
-              <p className="text-slate-500">
-                No upcoming tasks.
-              </p>
-            ) : (
-              upcomingTasks.map((task) => (
-                <div
-                  key={task.id}
-                  className="flex items-center justify-between pb-4"
-                >
-
-                  <div className="flex items-center gap-3">
 
                     <input
                       type="checkbox"
@@ -339,7 +260,7 @@ function Dashboard() {
 
                     <div>
 
-                      <h4
+                      <p
                         className={
                           task.completed
                             ? "line-through text-slate-400"
@@ -347,32 +268,25 @@ function Dashboard() {
                         }
                       >
                         {task.title}
-                      </h4>
+                      </p>
 
-                      <p className="text-sm text-slate-500">
+                      <p className="text-sm text-slate-500 mt-1">
                         {formatDate(task.date)}
+
+                        {task.time &&
+                          ` • ${formatTime(task.time)}`}
                       </p>
 
                     </div>
 
                   </div>
 
-                  <div className="flex items-center gap-4">
-
-                    {task.time && (
-                      <span className="text-sm text-blue-600">
-                        {formatTime(task.time)}
-                      </span>
-                    )}
-
-                    <button
-                      onClick={() => deleteTask(task.id)}
-                      className="text-red-500 text-sm hover:text-red-700"
-                    >
-                      Delete
-                    </button>
-
-                  </div>
+                  <button
+                    onClick={() => deleteTask(task.id)}
+                    className="text-red-500 text-sm hover:text-red-700"
+                  >
+                    Delete
+                  </button>
 
                 </div>
               ))
@@ -471,4 +385,4 @@ function Dashboard() {
   );
 }
 
-export default Dashboard;
+export default Tasks;
