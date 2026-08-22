@@ -1,8 +1,10 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 function Register() {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -49,11 +51,14 @@ function Register() {
     setError("");
 
     console.log("Registration Successful:", formData);
+
+    navigate("/dashboard");
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4">
       <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl p-10">
+
         <h1 className="text-3xl font-bold text-center text-blue-600">
           CARETAKER
         </h1>
@@ -63,6 +68,8 @@ function Register() {
         </p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+
+          {/* Full Name */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Full Name
@@ -78,6 +85,7 @@ function Register() {
             />
           </div>
 
+          {/* Email */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Email
@@ -93,6 +101,7 @@ function Register() {
             />
           </div>
 
+          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Password
@@ -118,6 +127,7 @@ function Register() {
             </div>
           </div>
 
+          {/* Confirm Password */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Confirm Password
@@ -149,18 +159,21 @@ function Register() {
             </div>
           </div>
 
+          {/* Error */}
           {error && (
             <p className="text-red-500 text-sm text-center">
               {error}
             </p>
           )}
 
+          {/* Submit */}
           <button
             type="submit"
             className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition duration-300"
           >
             Create Account
           </button>
+
         </form>
 
         <p className="text-center text-slate-600 mt-6">
@@ -172,6 +185,7 @@ function Register() {
             Login
           </Link>
         </p>
+
       </div>
     </div>
   );
