@@ -9,15 +9,36 @@ function Login() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
+
+    setError("");
   };
 
-  console.log("Current Form Data:", formData);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (!formData.email.trim()) {
+      return setError("Email is required");
+    }
+
+    if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      return setError("Please enter a valid email");
+    }
+
+    if (!formData.password.trim()) {
+      return setError("Password is required");
+    }
+
+    setError("");
+
+    console.log("Login Successful:", formData);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4">
@@ -30,7 +51,7 @@ function Login() {
           Welcome Back
         </p>
 
-        <form className="mt-8 space-y-4">
+        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Email
@@ -70,6 +91,12 @@ function Login() {
               </button>
             </div>
           </div>
+
+          {error && (
+            <p className="text-red-500 text-sm text-center">
+              {error}
+            </p>
+          )}
 
           <button
             type="submit"

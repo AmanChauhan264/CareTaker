@@ -12,15 +12,44 @@ function Register() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
+
+    setError("");
   };
 
-  console.log("Current Form Data:", formData);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (!formData.fullName.trim()) {
+      return setError("Full Name is required");
+    }
+
+    if (!formData.email.trim()) {
+      return setError("Email is required");
+    }
+
+    if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      return setError("Please enter a valid email");
+    }
+
+    if (formData.password.length < 6) {
+      return setError("Password must be at least 6 characters");
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      return setError("Passwords do not match");
+    }
+
+    setError("");
+
+    console.log("Registration Successful:", formData);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4">
@@ -33,11 +62,12 @@ function Register() {
           Create your account
         </p>
 
-        <form className="mt-8 space-y-4">
+        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Full Name
             </label>
+
             <input
               type="text"
               name="fullName"
@@ -52,6 +82,7 @@ function Register() {
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Email
             </label>
+
             <input
               type="email"
               name="email"
@@ -117,6 +148,12 @@ function Register() {
               </button>
             </div>
           </div>
+
+          {error && (
+            <p className="text-red-500 text-sm text-center">
+              {error}
+            </p>
+          )}
 
           <button
             type="submit"
