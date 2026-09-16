@@ -1,25 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useEvents } from "../context/EventContext";
 
 function Events() {
   const today = new Date().toISOString().split("T")[0];
 
-  const [events, setEvents] = useState([
-    {
-      id: 1,
-      title: "Temple Visit",
-      date: "2026-09-15",
-      time: "10:00",
-      description: "Visit temple with family",
-    },
-    {
-      id: 2,
-      title: "Project Submission",
-      date: "2026-09-20",
-      time: "17:00",
-      description: "Submit CARETAKER project",
-    },
-  ]);
+  // Get events from EventContext
+  const { events, addEvent, deleteEvent } = useEvents();
 
   const [showForm, setShowForm] = useState(false);
 
@@ -37,20 +24,12 @@ function Events() {
     });
   };
 
-  const addEvent = (e) => {
+  const handleAddEvent = (e) => {
     e.preventDefault();
 
     if (!newEvent.title.trim()) return;
 
-    const event = {
-      id: Date.now(),
-      title: newEvent.title,
-      date: newEvent.date,
-      time: newEvent.time,
-      description: newEvent.description,
-    };
-
-    setEvents([...events, event]);
+    addEvent(newEvent);
 
     setNewEvent({
       title: "",
@@ -60,10 +39,6 @@ function Events() {
     });
 
     setShowForm(false);
-  };
-
-  const deleteEvent = (id) => {
-    setEvents(events.filter((event) => event.id !== id));
   };
 
   const formatDate = (date) => {
@@ -137,9 +112,10 @@ function Events() {
           </Link>
 
         </nav>
+
       </aside>
 
-      {/* Main Content */}
+      {/* Main */}
       <main className="flex-1 p-8">
 
         {/* Header */}
@@ -164,7 +140,7 @@ function Events() {
 
         </div>
 
-        {/* Events */}
+        {/* Event List */}
         <div className="bg-white rounded-xl shadow-sm mt-8 p-6">
 
           <h3 className="text-xl font-semibold text-slate-800">
@@ -174,11 +150,15 @@ function Events() {
           <div className="mt-5 space-y-4">
 
             {events.length === 0 ? (
+
               <p className="text-slate-500 text-center py-6">
                 No events added yet.
               </p>
+
             ) : (
+
               events.map((event) => (
+
                 <div
                   key={event.id}
                   className="flex items-center justify-between p-5 rounded-lg bg-slate-50"
@@ -191,15 +171,18 @@ function Events() {
                     </div>
 
                     <div>
+
                       <h4 className="font-semibold text-slate-800">
                         {event.title}
                       </h4>
 
                       <p className="text-sm text-slate-500 mt-1">
+
                         {formatDate(event.date)}
 
                         {event.time &&
                           ` • ${formatTime(event.time)}`}
+
                       </p>
 
                       {event.description && (
@@ -207,6 +190,7 @@ function Events() {
                           {event.description}
                         </p>
                       )}
+
                     </div>
 
                   </div>
@@ -219,14 +203,18 @@ function Events() {
                   </button>
 
                 </div>
+
               ))
+
             )}
 
           </div>
+
         </div>
 
         {/* Add Event Modal */}
         {showForm && (
+
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center px-4">
 
             <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
@@ -247,12 +235,13 @@ function Events() {
               </div>
 
               <form
-                onSubmit={addEvent}
+                onSubmit={handleAddEvent}
                 className="space-y-5"
               >
 
-                {/* Title */}
+                {/* Event Name */}
                 <div>
+
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Event Name
                   </label>
@@ -266,10 +255,12 @@ function Events() {
                     className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   />
+
                 </div>
 
                 {/* Date */}
                 <div>
+
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Date
                   </label>
@@ -282,10 +273,12 @@ function Events() {
                     className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   />
+
                 </div>
 
                 {/* Time */}
                 <div>
+
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Time
                   </label>
@@ -297,10 +290,12 @@ function Events() {
                     onChange={handleChange}
                     className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+
                 </div>
 
                 {/* Description */}
                 <div>
+
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Description
                   </label>
@@ -313,8 +308,10 @@ function Events() {
                     rows="3"
                     className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                   />
+
                 </div>
 
+                {/* Submit */}
                 <button
                   type="submit"
                   className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition"
@@ -327,9 +324,11 @@ function Events() {
             </div>
 
           </div>
+
         )}
 
       </main>
+
     </div>
   );
 }

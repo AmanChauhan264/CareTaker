@@ -1,34 +1,29 @@
 import { useState } from "react";
+import { requestNotificationPermission } from "../services/reminderService";
 import { Link } from "react-router-dom";
+import { useTasks } from "../context/TaskContext";
 
 function Tasks() {
   const today = new Date().toISOString().split("T")[0];
 
-  const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      title: "Complete DSA Practice",
-      date: today,
-      time: "19:00",
-      completed: false,
-    },
-    {
-      id: 2,
-      title: "Work on CARETAKER",
-      date: today,
-      time: "20:00",
-      completed: false,
-    },
-    {
-      id: 3,
-      title: "Attend College",
-      date: today,
-      time: "10:00",
-      completed: true,
-    },
-  ]);
+  const { tasks, addTask, toggleTask, deleteTask } = useTasks();
+
+  const [notificationStatus, setNotificationStatus] = useState(
+  "Notification.permission" in window
+    ? Notification.permission
+    : "unsupported"
+);
+
+const enableNotifications = async () => {
+  const granted = await requestNotificationPermission();
+
+  setNotificationStatus(
+    granted ? "granted" : Notification.permission
+  );
+};
 
   const [filter, setFilter] = useState("all");
+
   const [showForm, setShowForm] = useState(false);
 
   const [newTask, setNewTask] = useState({
@@ -44,20 +39,12 @@ function Tasks() {
     });
   };
 
-  const addTask = (e) => {
+  const handleAddTask = (e) => {
     e.preventDefault();
 
     if (!newTask.title.trim()) return;
 
-    const task = {
-      id: Date.now(),
-      title: newTask.title,
-      date: newTask.date,
-      time: newTask.time,
-      completed: false,
-    };
-
-    setTasks([...tasks, task]);
+    addTask(newTask);
 
     setNewTask({
       title: "",
@@ -66,20 +53,6 @@ function Tasks() {
     });
 
     setShowForm(false);
-  };
-
-  const toggleTask = (id) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === id
-          ? { ...task, completed: !task.completed }
-          : task
-      )
-    );
-  };
-
-  const deleteTask = (id) => {
-    setTasks(tasks.filter((task) => task.id !== id));
   };
 
   const filteredTasks = tasks.filter((task) => {
@@ -162,7 +135,7 @@ function Tasks() {
         </nav>
       </aside>
 
-      {/* Main Content */}
+      {/* Main */}
       <main className="flex-1 p-8">
 
         {/* Header */}
@@ -178,12 +151,25 @@ function Tasks() {
             </p>
           </div>
 
-          <button
-            onClick={() => setShowForm(true)}
-            className="bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700 transition"
-          >
-            + Add Task
-          </button>
+         <div className="flex gap-3">
+
+  {notificationStatus !== "granted" && (
+    <button
+      onClick={enableNotifications}
+      className="bg-green-600 text-white px-5 py-3 rounded-lg hover:bg-green-700 transition"
+    >
+      🔔 Enable Notifications
+    </button>
+  )}
+
+  <button
+    onClick={() => setShowForm(true)}
+    className="bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700 transition"
+  >
+    + Add Task
+  </button>
+
+</div>
 
         </div>
 
@@ -239,11 +225,12 @@ function Tasks() {
           <div className="mt-5 space-y-3">
 
             {filteredTasks.length === 0 ? (
-              <p className="text-slate-500 py-6 text-center">
+              <p className="text-slate-500 text-center py-6">
                 No tasks found.
               </p>
             ) : (
               filteredTasks.map((task) => (
+
                 <div
                   key={task.id}
                   className="flex items-center justify-between p-4 rounded-lg bg-slate-50"
@@ -271,10 +258,12 @@ function Tasks() {
                       </p>
 
                       <p className="text-sm text-slate-500 mt-1">
+
                         {formatDate(task.date)}
 
                         {task.time &&
                           ` • ${formatTime(task.time)}`}
+
                       </p>
 
                     </div>
@@ -289,6 +278,7 @@ function Tasks() {
                   </button>
 
                 </div>
+
               ))
             )}
 
@@ -297,6 +287,7 @@ function Tasks() {
 
         {/* Add Task Modal */}
         {showForm && (
+
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center px-4">
 
             <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
@@ -317,11 +308,12 @@ function Tasks() {
               </div>
 
               <form
-                onSubmit={addTask}
+                onSubmit={handleAddTask}
                 className="space-y-5"
               >
 
                 <div>
+
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Task Name
                   </label>
@@ -335,9 +327,11 @@ function Tasks() {
                     className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   />
+
                 </div>
 
                 <div>
+
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Date
                   </label>
@@ -350,9 +344,11 @@ function Tasks() {
                     className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   />
+
                 </div>
 
                 <div>
+
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Time
                   </label>
@@ -364,6 +360,7 @@ function Tasks() {
                     onChange={handleChange}
                     className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+
                 </div>
 
                 <button
@@ -378,6 +375,7 @@ function Tasks() {
             </div>
 
           </div>
+
         )}
 
       </main>
