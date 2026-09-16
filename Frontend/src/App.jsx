@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import Events from "./pages/Events";
 import Analytics from "./pages/Analytics";
+import Settings from "./pages/Settings";
 
 function App() {
   return (
@@ -26,6 +27,8 @@ function App() {
         <Route path="/events" element={<Events />} />
 
         <Route path="/analytics" element={<Analytics />} />
+        
+        <Route path="/settings" element={<Settings />} />
 
       </Routes>
     </BrowserRouter>
