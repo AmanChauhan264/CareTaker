@@ -43,7 +43,7 @@ export function TaskProvider({ children }) {
     ];
   });
 
-  // Save tasks to localStorage
+  // Save tasks whenever they change
   useEffect(() => {
     localStorage.setItem(
       "caretaker_tasks",
@@ -63,7 +63,21 @@ export function TaskProvider({ children }) {
     ]);
   };
 
-  // Toggle task
+  // Update task
+  const updateTask = (id, updatedTask) => {
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === id
+          ? {
+              ...task,
+              ...updatedTask,
+            }
+          : task
+      )
+    );
+  };
+
+  // Complete / uncomplete task
   const toggleTask = (id) => {
     setTasks((prev) =>
       prev.map((task) =>
@@ -89,6 +103,7 @@ export function TaskProvider({ children }) {
       value={{
         tasks,
         addTask,
+        updateTask,
         toggleTask,
         deleteTask,
       }}

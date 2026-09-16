@@ -6,25 +6,26 @@ import { useTasks } from "../context/TaskContext";
 function Tasks() {
   const today = new Date().toISOString().split("T")[0];
 
-  const { tasks, addTask, toggleTask, deleteTask } = useTasks();
+  const {
+    tasks,
+    addTask,
+    updateTask,
+    toggleTask,
+    deleteTask,
+  } = useTasks();
 
   const [notificationStatus, setNotificationStatus] = useState(
-  "Notification.permission" in window
-    ? Notification.permission
-    : "unsupported"
-);
-
-const enableNotifications = async () => {
-  const granted = await requestNotificationPermission();
-
-  setNotificationStatus(
-    granted ? "granted" : Notification.permission
+    "Notification" in window
+      ? Notification.permission
+      : "unsupported"
   );
-};
 
   const [filter, setFilter] = useState("all");
 
   const [showForm, setShowForm] = useState(false);
+
+  // Editing task
+  const [editingTask, setEditingTask] = useState(null);
 
   const [newTask, setNewTask] = useState({
     title: "",
@@ -32,6 +33,19 @@ const enableNotifications = async () => {
     time: "",
   });
 
+  // Enable notifications
+  const enableNotifications = async () => {
+    const granted =
+      await requestNotificationPermission();
+
+    setNotificationStatus(
+      granted
+        ? "granted"
+        : Notification.permission
+    );
+  };
+
+  // Input change
   const handleChange = (e) => {
     setNewTask({
       ...newTask,
@@ -39,6 +53,7 @@ const enableNotifications = async () => {
     });
   };
 
+  // Add task
   const handleAddTask = (e) => {
     e.preventDefault();
 
@@ -55,34 +70,88 @@ const enableNotifications = async () => {
     setShowForm(false);
   };
 
+  // Start editing
+  const handleEditTask = (task) => {
+    setEditingTask(task);
+
+    setNewTask({
+      title: task.title,
+      date: task.date,
+      time: task.time || "",
+    });
+
+    setShowForm(true);
+  };
+
+  // Update task
+  const handleUpdateTask = (e) => {
+    e.preventDefault();
+
+    if (!newTask.title.trim()) return;
+
+    updateTask(editingTask.id, {
+      title: newTask.title,
+      date: newTask.date,
+      time: newTask.time,
+    });
+
+    setEditingTask(null);
+
+    setNewTask({
+      title: "",
+      date: today,
+      time: "",
+    });
+
+    setShowForm(false);
+  };
+
+  // Close form
+  const closeForm = () => {
+    setShowForm(false);
+    setEditingTask(null);
+
+    setNewTask({
+      title: "",
+      date: today,
+      time: "",
+    });
+  };
+
+  // Filter
   const filteredTasks = tasks.filter((task) => {
-    if (filter === "pending") return !task.completed;
-    if (filter === "completed") return task.completed;
+    if (filter === "pending") {
+      return !task.completed;
+    }
+
+    if (filter === "completed") {
+      return task.completed;
+    }
 
     return true;
   });
 
+  // Format date
   const formatDate = (date) => {
-    return new Date(date + "T00:00:00").toLocaleDateString(
-      "en-IN",
-      {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      }
-    );
+    return new Date(
+      date + "T00:00:00"
+    ).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
   };
 
+  // Format time
   const formatTime = (time) => {
     if (!time) return "";
 
-    return new Date(`2000-01-01T${time}`).toLocaleTimeString(
-      "en-IN",
-      {
-        hour: "numeric",
-        minute: "2-digit",
-      }
-    );
+    return new Date(
+      `2000-01-01T${time}`
+    ).toLocaleTimeString("en-IN", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
   };
 
   return (
@@ -151,26 +220,28 @@ const enableNotifications = async () => {
             </p>
           </div>
 
-         <div className="flex gap-3">
+          <div className="flex gap-3">
 
-  {notificationStatus !== "granted" && (
-    <button
-      onClick={enableNotifications}
-      className="bg-green-600 text-white px-5 py-3 rounded-lg hover:bg-green-700 transition"
-    >
-      🔔 Enable Notifications
-    </button>
-  )}
+            {notificationStatus !== "granted" && (
+              <button
+                onClick={enableNotifications}
+                className="bg-green-600 text-white px-5 py-3 rounded-lg hover:bg-green-700 transition"
+              >
+                🔔 Enable Notifications
+              </button>
+            )}
 
-  <button
-    onClick={() => setShowForm(true)}
-    className="bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700 transition"
-  >
-    + Add Task
-  </button>
+            <button
+              onClick={() => {
+                setEditingTask(null);
+                setShowForm(true);
+              }}
+              className="bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700 transition"
+            >
+              + Add Task
+            </button>
 
-</div>
-
+          </div>
         </div>
 
         {/* Filters */}
@@ -225,10 +296,13 @@ const enableNotifications = async () => {
           <div className="mt-5 space-y-3">
 
             {filteredTasks.length === 0 ? (
+
               <p className="text-slate-500 text-center py-6">
                 No tasks found.
               </p>
+
             ) : (
+
               filteredTasks.map((task) => (
 
                 <div
@@ -241,7 +315,9 @@ const enableNotifications = async () => {
                     <input
                       type="checkbox"
                       checked={task.completed}
-                      onChange={() => toggleTask(task.id)}
+                      onChange={() =>
+                        toggleTask(task.id)
+                      }
                       className="w-4 h-4"
                     />
 
@@ -270,12 +346,27 @@ const enableNotifications = async () => {
 
                   </div>
 
-                  <button
-                    onClick={() => deleteTask(task.id)}
-                    className="text-red-500 text-sm hover:text-red-700"
-                  >
-                    Delete
-                  </button>
+                  <div className="flex items-center gap-4">
+
+                    <button
+                      onClick={() =>
+                        handleEditTask(task)
+                      }
+                      className="text-blue-600 text-sm hover:text-blue-800"
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        deleteTask(task.id)
+                      }
+                      className="text-red-500 text-sm hover:text-red-700"
+                    >
+                      Delete
+                    </button>
+
+                  </div>
 
                 </div>
 
@@ -285,7 +376,7 @@ const enableNotifications = async () => {
           </div>
         </div>
 
-        {/* Add Task Modal */}
+        {/* Add / Edit Task Modal */}
         {showForm && (
 
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center px-4">
@@ -295,11 +386,13 @@ const enableNotifications = async () => {
               <div className="flex justify-between items-center mb-6">
 
                 <h3 className="text-2xl font-bold text-slate-800">
-                  Add New Task
+                  {editingTask
+                    ? "Edit Task"
+                    : "Add New Task"}
                 </h3>
 
                 <button
-                  onClick={() => setShowForm(false)}
+                  onClick={closeForm}
                   className="text-slate-500 text-xl"
                 >
                   ✕
@@ -308,10 +401,15 @@ const enableNotifications = async () => {
               </div>
 
               <form
-                onSubmit={handleAddTask}
+                onSubmit={
+                  editingTask
+                    ? handleUpdateTask
+                    : handleAddTask
+                }
                 className="space-y-5"
               >
 
+                {/* Task Name */}
                 <div>
 
                   <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -330,6 +428,7 @@ const enableNotifications = async () => {
 
                 </div>
 
+                {/* Date */}
                 <div>
 
                   <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -347,6 +446,7 @@ const enableNotifications = async () => {
 
                 </div>
 
+                {/* Time */}
                 <div>
 
                   <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -367,7 +467,9 @@ const enableNotifications = async () => {
                   type="submit"
                   className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition"
                 >
-                  Add Task
+                  {editingTask
+                    ? "Save Changes"
+                    : "Add Task"}
                 </button>
 
               </form>

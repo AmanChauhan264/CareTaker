@@ -5,10 +5,16 @@ import { useEvents } from "../context/EventContext";
 function Events() {
   const today = new Date().toISOString().split("T")[0];
 
-  // Get events from EventContext
-  const { events, addEvent, deleteEvent } = useEvents();
+  const {
+    events,
+    addEvent,
+    updateEvent,
+    deleteEvent,
+  } = useEvents();
 
   const [showForm, setShowForm] = useState(false);
+
+  const [editingEvent, setEditingEvent] = useState(null);
 
   const [newEvent, setNewEvent] = useState({
     title: "",
@@ -17,6 +23,7 @@ function Events() {
     description: "",
   });
 
+  // Input change
   const handleChange = (e) => {
     setNewEvent({
       ...newEvent,
@@ -24,6 +31,7 @@ function Events() {
     });
   };
 
+  // Add event
   const handleAddEvent = (e) => {
     e.preventDefault();
 
@@ -31,6 +39,41 @@ function Events() {
 
     addEvent(newEvent);
 
+    resetForm();
+  };
+
+  // Start editing
+  const handleEditEvent = (event) => {
+    setEditingEvent(event);
+
+    setNewEvent({
+      title: event.title,
+      date: event.date,
+      time: event.time || "",
+      description: event.description || "",
+    });
+
+    setShowForm(true);
+  };
+
+  // Update event
+  const handleUpdateEvent = (e) => {
+    e.preventDefault();
+
+    if (!newEvent.title.trim()) return;
+
+    updateEvent(editingEvent.id, {
+      title: newEvent.title,
+      date: newEvent.date,
+      time: newEvent.time,
+      description: newEvent.description,
+    });
+
+    resetForm();
+  };
+
+  // Reset form
+  const resetForm = () => {
     setNewEvent({
       title: "",
       date: today,
@@ -38,30 +81,31 @@ function Events() {
       description: "",
     });
 
+    setEditingEvent(null);
     setShowForm(false);
   };
 
+  // Format date
   const formatDate = (date) => {
-    return new Date(date + "T00:00:00").toLocaleDateString(
-      "en-IN",
-      {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      }
-    );
+    return new Date(
+      date + "T00:00:00"
+    ).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
   };
 
+  // Format time
   const formatTime = (time) => {
     if (!time) return "";
 
-    return new Date(`2000-01-01T${time}`).toLocaleTimeString(
-      "en-IN",
-      {
-        hour: "numeric",
-        minute: "2-digit",
-      }
-    );
+    return new Date(
+      `2000-01-01T${time}`
+    ).toLocaleTimeString("en-IN", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
   };
 
   return (
@@ -132,7 +176,10 @@ function Events() {
           </div>
 
           <button
-            onClick={() => setShowForm(true)}
+            onClick={() => {
+              setEditingEvent(null);
+              setShowForm(true);
+            }}
             className="bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700 transition"
           >
             + Add Event
@@ -195,12 +242,27 @@ function Events() {
 
                   </div>
 
-                  <button
-                    onClick={() => deleteEvent(event.id)}
-                    className="text-red-500 text-sm hover:text-red-700"
-                  >
-                    Delete
-                  </button>
+                  <div className="flex items-center gap-4">
+
+                    <button
+                      onClick={() =>
+                        handleEditEvent(event)
+                      }
+                      className="text-blue-600 text-sm hover:text-blue-800"
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        deleteEvent(event.id)
+                      }
+                      className="text-red-500 text-sm hover:text-red-700"
+                    >
+                      Delete
+                    </button>
+
+                  </div>
 
                 </div>
 
@@ -212,7 +274,7 @@ function Events() {
 
         </div>
 
-        {/* Add Event Modal */}
+        {/* Add / Edit Event Modal */}
         {showForm && (
 
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center px-4">
@@ -222,11 +284,13 @@ function Events() {
               <div className="flex justify-between items-center mb-6">
 
                 <h3 className="text-2xl font-bold text-slate-800">
-                  Add New Event
+                  {editingEvent
+                    ? "Edit Event"
+                    : "Add New Event"}
                 </h3>
 
                 <button
-                  onClick={() => setShowForm(false)}
+                  onClick={resetForm}
                   className="text-slate-500 text-xl"
                 >
                   ✕
@@ -235,7 +299,11 @@ function Events() {
               </div>
 
               <form
-                onSubmit={handleAddEvent}
+                onSubmit={
+                  editingEvent
+                    ? handleUpdateEvent
+                    : handleAddEvent
+                }
                 className="space-y-5"
               >
 
@@ -316,7 +384,9 @@ function Events() {
                   type="submit"
                   className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition"
                 >
-                  Add Event
+                  {editingEvent
+                    ? "Save Changes"
+                    : "Add Event"}
                 </button>
 
               </form>

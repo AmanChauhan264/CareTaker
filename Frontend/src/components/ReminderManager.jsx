@@ -1,23 +1,25 @@
 import { useEffect, useState } from "react";
+
 import { useTasks } from "../context/TaskContext";
 import { useEvents } from "../context/EventContext";
+
 import {
   requestNotificationPermission,
   triggerReminder,
 } from "../services/reminderService";
 
 function ReminderManager() {
-  const { tasks } = useTasks();
+  const { tasks, toggleTask } = useTasks();
   const { events } = useEvents();
 
   const [reminder, setReminder] = useState(null);
 
-  // Ask notification permission
+  // Ask for notification permission
   useEffect(() => {
     requestNotificationPermission();
   }, []);
 
-  // Check tasks and events
+  // Check reminders
   useEffect(() => {
     const checkReminders = () => {
       const now = new Date();
@@ -34,9 +36,9 @@ function ReminderManager() {
         ":" +
         String(now.getMinutes()).padStart(2, "0");
 
-      // =========================
-      // TASK REMINDERS
-      // =========================
+      /* =========================
+         TASK REMINDERS
+      ========================= */
 
       for (const task of tasks) {
         if (task.completed) {
@@ -49,7 +51,7 @@ function ReminderManager() {
         const snoozeUntil =
           localStorage.getItem(snoozeKey);
 
-        // Task is currently snoozed
+        // Check snooze
         if (snoozeUntil) {
           if (Date.now() < Number(snoozeUntil)) {
             continue;
@@ -57,8 +59,30 @@ function ReminderManager() {
 
           // Snooze finished
           localStorage.removeItem(snoozeKey);
+
+          const reminderData = {
+            id: task.id,
+            title: task.title,
+            date: task.date,
+            time: task.time,
+            type: "task",
+          };
+
+          setReminder(reminderData);
+
+          try {
+            triggerReminder(reminderData);
+          } catch (error) {
+            console.error(
+              "Task reminder error:",
+              error
+            );
+          }
+
+          return;
         }
 
+        // Normal scheduled reminder
         if (
           task.date !== currentDate ||
           task.time !== currentTime
@@ -100,19 +124,18 @@ function ReminderManager() {
         return;
       }
 
-      // =========================
-      // EVENT REMINDERS
-      // =========================
+      /* =========================
+         EVENT REMINDERS
+      ========================= */
 
       for (const event of events) {
-
         const snoozeKey =
           `snooze_event_${event.id}`;
 
         const snoozeUntil =
           localStorage.getItem(snoozeKey);
 
-        // Event is currently snoozed
+        // Check snooze
         if (snoozeUntil) {
           if (Date.now() < Number(snoozeUntil)) {
             continue;
@@ -120,8 +143,31 @@ function ReminderManager() {
 
           // Snooze finished
           localStorage.removeItem(snoozeKey);
+
+          const reminderData = {
+            id: event.id,
+            title: event.title,
+            date: event.date,
+            time: event.time,
+            description: event.description || "",
+            type: "event",
+          };
+
+          setReminder(reminderData);
+
+          try {
+            triggerReminder(reminderData);
+          } catch (error) {
+            console.error(
+              "Event reminder error:",
+              error
+            );
+          }
+
+          return;
         }
 
+        // Normal scheduled reminder
         if (
           event.date !== currentDate ||
           event.time !== currentTime
@@ -177,22 +223,29 @@ function ReminderManager() {
     return () => {
       clearInterval(interval);
     };
-
   }, [tasks, events]);
 
-
-  // =========================
-  // DONE
-  // =========================
+  /* =========================
+     DONE
+  ========================= */
 
   const closeReminder = () => {
+    if (!reminder) {
+      return;
+    }
+
+    // If task → mark completed
+    if (reminder.type === "task") {
+      toggleTask(reminder.id);
+    }
+
+    // Close popup
     setReminder(null);
   };
 
-
-  // =========================
-  // SNOOZE 5 MINUTES
-  // =========================
+  /* =========================
+     SNOOZE
+  ========================= */
 
   const snoozeReminder = () => {
     if (!reminder) {
@@ -213,19 +266,17 @@ function ReminderManager() {
     setReminder(null);
   };
 
-
-  // =========================
-  // NO REMINDER
-  // =========================
+  /* =========================
+     NO REMINDER
+  ========================= */
 
   if (!reminder) {
     return null;
   }
 
-
-  // =========================
-  // POPUP
-  // =========================
+  /* =========================
+     POPUP
+  ========================= */
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 px-4">

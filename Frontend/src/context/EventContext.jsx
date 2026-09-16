@@ -1,4 +1,9 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 const EventContext = createContext();
 
@@ -47,6 +52,20 @@ export function EventProvider({ children }) {
     ]);
   };
 
+  // Update event
+  const updateEvent = (id, updatedEvent) => {
+    setEvents((prev) =>
+      prev.map((event) =>
+        event.id === id
+          ? {
+              ...event,
+              ...updatedEvent,
+            }
+          : event
+      )
+    );
+  };
+
   // Delete event
   const deleteEvent = (id) => {
     setEvents((prev) =>
@@ -59,6 +78,7 @@ export function EventProvider({ children }) {
       value={{
         events,
         addEvent,
+        updateEvent,
         deleteEvent,
       }}
     >
@@ -67,6 +87,7 @@ export function EventProvider({ children }) {
   );
 }
 
+// IMPORTANT: Events.jsx uses this function
 export function useEvents() {
   return useContext(EventContext);
 }
