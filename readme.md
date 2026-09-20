@@ -1,28 +1,81 @@
 # CARETAKER
 
-CARETAKER is a modern task and event management web application designed to act as a personal digital guardian. It helps users organize daily tasks, track important events, manage reminders, and stay productive through a clean and intuitive interface.
+CARETAKER is a modern task and event management web application designed to act as a personal digital guardian. It helps users organize daily tasks, track important events, manage reminders, and monitor their productivity through a clean and intuitive interface.
 
 ## Features
 
-- User Authentication (In Progress)
-- Create and Manage Daily Tasks
-- Event Tracking
-- Responsive Modern UI
-- Secure Login & Registration System
-- Dashboard for Task Management
-- Password Visibility Toggle
-- React Router Based Navigation
+### Task Management
+
+- Create and manage daily tasks
+- Set task date and time
+- Mark tasks as completed or pending
+- Edit existing tasks
+- Delete tasks
+- Filter tasks by All, Pending, and Completed
+- View today's and upcoming tasks
+
+### Event Management
+
+- Create important events
+- Set event date and time
+- Add event descriptions
+- Edit existing events
+- Delete events
+- View upcoming events
+
+### Reminder System
+
+- Task reminders
+- Event reminders
+- Browser notifications
+- Reminder sound
+- 5-minute snooze functionality
+- Automatic task completion when clicking "Done"
+- Duplicate reminder prevention
+- Local reminder tracking
+
+### Dashboard
+
+- Today's task overview
+- Pending task count
+- Completed task count
+- Today's tasks
+- Upcoming tasks
+- Quick navigation to application sections
+
+### Analytics
+
+- Task completion statistics
+- Pending and completed task overview
+- Productivity information
+
+### Settings
+
+- Application settings
+- Notification settings
+
+### Authentication
+
+- Login page
+- Registration page
+- Password visibility toggle
+- Authentication system UI
 
 ## Tech Stack
 
 ### Frontend
+
 - React.js
 - Vite
 - Tailwind CSS
 - React Router DOM
-- React Icons
+- JavaScript
+- React Context API
+- Browser Notification API
+- LocalStorage
 
-### Backend (Planned)
+### Backend — Upcoming
+
 - Node.js
 - Express.js
 - MongoDB Atlas
@@ -37,95 +90,36 @@ CareTaker/
 │
 ├── Frontend/
 │   ├── src/
+│   │   │
 │   │   ├── assets/
+│   │   │
 │   │   ├── components/
+│   │   │   └── ReminderManager.jsx
+│   │   │
+│   │   ├── context/
+│   │   │   ├── TaskContext.jsx
+│   │   │   └── EventContext.jsx
+│   │   │
 │   │   ├── pages/
 │   │   │   ├── Landing.jsx
 │   │   │   ├── Login.jsx
 │   │   │   ├── Register.jsx
-│   │   │   └── Dashboard.jsx
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── Tasks.jsx
+│   │   │   ├── Events.jsx
+│   │   │   ├── Analytics.jsx
+│   │   │   └── Settings.jsx
+│   │   │
+│   │   ├── services/
+│   │   │   └── reminderService.js
+│   │   │
 │   │   ├── App.jsx
 │   │   ├── main.jsx
 │   │   └── index.css
 │   │
 │   └── package.json
 │
-└── Backend/
-```
-
-## Current Progress
-
-### Completed
-- Landing Page
-- Login Page UI
-- Register Page UI
-- React Router Setup
-- Navbar Navigation
-- Form State Management
-- Password Show/Hide Functionality
-
-### Upcoming Features
-- Form Validation
-- Dashboard UI
-- Backend API Development
-- MongoDB Integration
-- JWT Authentication
-- Task CRUD Operations
-- Event Management
-- Notifications & Reminders
-
-## Installation
-
-Clone the repository:
-
-```bash
-git clone https://github.com/your-username/caretaker.git
-```
-
-Navigate to the frontend directory:
-
-```bash
-cd CareTaker/Frontend
-```
-
-Install dependencies:
-
-```bash
-npm install
-```
-
-Start the development server:
-
-```bash
-npm run dev
-```
-
-Application will run on:
-
-```text
-http://localhost:5173
-```
-
-## Screenshots
-
-Screenshots will be added as development progresses.
-
-## Future Scope
-
-- Browser Notifications
-- Smart Reminder System
-- AI-Based Productivity Suggestions
-- Analytics Dashboard
-- Mobile Responsive Enhancements
-
-## Author
-
-**Aman Chauhan**
-
-B.Tech Computer Science Engineering
-
-GitHub: https://github.com/AmanChauhan264
-
----
-
-⭐ If you like this project, consider giving it a star.
+├── Backend/
+│   └── # Backend development coming next
+│
+└── README.md

@@ -54,16 +54,38 @@ export function EventProvider({ children }) {
 
   // Update event
   const updateEvent = (id, updatedEvent) => {
-    setEvents((prev) =>
-      prev.map((event) =>
+    setEvents((prev) => {
+      const existingEvent = prev.find((event) => event.id === id);
+
+      if (existingEvent) {
+        const dateOrTimeChanged =
+          (updatedEvent.date && updatedEvent.date !== existingEvent.date) ||
+          (updatedEvent.time !== undefined &&
+            updatedEvent.time !== existingEvent.time);
+
+        if (dateOrTimeChanged) {
+          // Clear any active snooze for this event
+          localStorage.removeItem(`snooze_event_${id}`);
+
+          // Clear previous reminder tracking flags for this event
+          Object.keys(localStorage).forEach((key) => {
+            if (key.startsWith(`event_reminded_${id}_`)) {
+              localStorage.removeItem(key);
+            }
+          });
+        }
+      }
+
+      return prev.map((event) =>
         event.id === id
           ? {
               ...event,
               ...updatedEvent,
+              id: event.id, // Preserve event ID
             }
           : event
-      )
-    );
+      );
+    });
   };
 
   // Delete event

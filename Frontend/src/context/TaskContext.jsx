@@ -8,7 +8,13 @@ import {
 const TaskContext = createContext();
 
 export function TaskProvider({ children }) {
-  const today = new Date().toISOString().split("T")[0];
+  const now = new Date();
+  const today =
+    now.getFullYear() +
+    "-" +
+    String(now.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(now.getDate()).padStart(2, "0");
 
   // Load tasks from localStorage
   const [tasks, setTasks] = useState(() => {
@@ -65,16 +71,39 @@ export function TaskProvider({ children }) {
 
   // Update task
   const updateTask = (id, updatedTask) => {
-    setTasks((prev) =>
-      prev.map((task) =>
+    setTasks((prev) => {
+      const existingTask = prev.find((task) => task.id === id);
+
+      if (existingTask) {
+        const dateOrTimeChanged =
+          (updatedTask.date && updatedTask.date !== existingTask.date) ||
+          (updatedTask.time !== undefined &&
+            updatedTask.time !== existingTask.time);
+
+        if (dateOrTimeChanged) {
+          // Clear any active snooze for this task so it doesn't trigger on the old schedule
+          localStorage.removeItem(`snooze_task_${id}`);
+
+          // Clear previous reminder tracking flags for this task
+          Object.keys(localStorage).forEach((key) => {
+            if (key.startsWith(`task_reminded_${id}_`)) {
+              localStorage.removeItem(key);
+            }
+          });
+        }
+      }
+
+      return prev.map((task) =>
         task.id === id
           ? {
               ...task,
               ...updatedTask,
+              id: task.id, // Preserve task ID
+              completed: task.completed, // Preserve completed status
             }
           : task
-      )
-    );
+      );
+    });
   };
 
   // Complete / uncomplete task

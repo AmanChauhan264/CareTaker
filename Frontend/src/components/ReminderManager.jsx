@@ -225,6 +225,23 @@ function ReminderManager() {
     };
   }, [tasks, events]);
 
+  // If the active reminder item was marked completed or deleted, dismiss popup
+  useEffect(() => {
+    if (!reminder) return;
+
+    if (reminder.type === "task") {
+      const currentTask = tasks.find((t) => t.id === reminder.id);
+      if (!currentTask || currentTask.completed) {
+        setReminder(null);
+      }
+    } else if (reminder.type === "event") {
+      const currentEvent = events.find((e) => e.id === reminder.id);
+      if (!currentEvent) {
+        setReminder(null);
+      }
+    }
+  }, [tasks, events, reminder]);
+
   /* =========================
      DONE
   ========================= */

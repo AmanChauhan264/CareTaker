@@ -3,7 +3,13 @@ import { Link } from "react-router-dom";
 import { useEvents } from "../context/EventContext";
 
 function Events() {
-  const today = new Date().toISOString().split("T")[0];
+  const now = new Date();
+  const today =
+    now.getFullYear() +
+    "-" +
+    String(now.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(now.getDate()).padStart(2, "0");
 
   const {
     events,
@@ -379,15 +385,25 @@ function Events() {
 
                 </div>
 
-                {/* Submit */}
-                <button
-                  type="submit"
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition"
-                >
-                  {editingEvent
-                    ? "Save Changes"
-                    : "Add Event"}
-                </button>
+                {/* Actions */}
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-lg hover:bg-slate-200 transition font-medium"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-medium"
+                  >
+                    {editingEvent
+                      ? "Save Changes"
+                      : "Add Event"}
+                  </button>
+                </div>
 
               </form>
 

@@ -4,7 +4,13 @@ import { Link } from "react-router-dom";
 import { useTasks } from "../context/TaskContext";
 
 function Tasks() {
-  const today = new Date().toISOString().split("T")[0];
+  const now = new Date();
+  const today =
+    now.getFullYear() +
+    "-" +
+    String(now.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(now.getDate()).padStart(2, "0");
 
   const {
     tasks,
@@ -53,21 +59,31 @@ function Tasks() {
     });
   };
 
-  // Add task
-  const handleAddTask = (e) => {
-    e.preventDefault();
-
-    if (!newTask.title.trim()) return;
-
-    addTask(newTask);
+  // Close form
+  const closeForm = () => {
+    setShowForm(false);
+    setEditingTask(null);
 
     setNewTask({
       title: "",
       date: today,
       time: "",
     });
+  };
 
-    setShowForm(false);
+  // Add task
+  const handleAddTask = (e) => {
+    e.preventDefault();
+
+    if (!newTask.title.trim()) return;
+
+    addTask({
+      title: newTask.title.trim(),
+      date: newTask.date,
+      time: newTask.time,
+    });
+
+    closeForm();
   };
 
   // Start editing
@@ -87,35 +103,15 @@ function Tasks() {
   const handleUpdateTask = (e) => {
     e.preventDefault();
 
-    if (!newTask.title.trim()) return;
+    if (!newTask.title.trim() || !editingTask) return;
 
     updateTask(editingTask.id, {
-      title: newTask.title,
+      title: newTask.title.trim(),
       date: newTask.date,
       time: newTask.time,
     });
 
-    setEditingTask(null);
-
-    setNewTask({
-      title: "",
-      date: today,
-      time: "",
-    });
-
-    setShowForm(false);
-  };
-
-  // Close form
-  const closeForm = () => {
-    setShowForm(false);
-    setEditingTask(null);
-
-    setNewTask({
-      title: "",
-      date: today,
-      time: "",
-    });
+    closeForm();
   };
 
   // Filter
@@ -234,6 +230,11 @@ function Tasks() {
             <button
               onClick={() => {
                 setEditingTask(null);
+                setNewTask({
+                  title: "",
+                  date: today,
+                  time: "",
+                });
                 setShowForm(true);
               }}
               className="bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700 transition"
@@ -463,14 +464,24 @@ function Tasks() {
 
                 </div>
 
-                <button
-                  type="submit"
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition"
-                >
-                  {editingTask
-                    ? "Save Changes"
-                    : "Add Task"}
-                </button>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={closeForm}
+                    className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-lg hover:bg-slate-200 transition font-medium"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-medium"
+                  >
+                    {editingTask
+                      ? "Save Changes"
+                      : "Add Task"}
+                  </button>
+                </div>
 
               </form>
 
