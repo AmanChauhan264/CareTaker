@@ -18,6 +18,8 @@ function Tasks() {
     updateTask,
     toggleTask,
     deleteTask,
+    loading,
+    error,
   } = useTasks();
 
   const [notificationStatus, setNotificationStatus] = useState(
@@ -27,11 +29,10 @@ function Tasks() {
   );
 
   const [filter, setFilter] = useState("all");
-
   const [showForm, setShowForm] = useState(false);
-
-  // Editing task
   const [editingTask, setEditingTask] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
 
   const [newTask, setNewTask] = useState({
     title: "",
@@ -57,12 +58,15 @@ function Tasks() {
       ...newTask,
       [e.target.name]: e.target.value,
     });
+    setFormError("");
   };
 
   // Close form
   const closeForm = () => {
     setShowForm(false);
     setEditingTask(null);
+    setFormError("");
+    setSubmitting(false);
 
     setNewTask({
       title: "",
@@ -72,23 +76,36 @@ function Tasks() {
   };
 
   // Add task
-  const handleAddTask = (e) => {
+  const handleAddTask = async (e) => {
     e.preventDefault();
 
-    if (!newTask.title.trim()) return;
+    if (!newTask.title.trim()) {
+      return setFormError("Task name is required");
+    }
 
-    addTask({
-      title: newTask.title.trim(),
-      date: newTask.date,
-      time: newTask.time,
-    });
+    setSubmitting(true);
+    setFormError("");
 
-    closeForm();
+    try {
+      await addTask({
+        title: newTask.title.trim(),
+        date: newTask.date,
+        time: newTask.time,
+      });
+      closeForm();
+    } catch (err) {
+      setFormError(
+        err.response?.data?.message || "Failed to create task. Please try again."
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Start editing
   const handleEditTask = (task) => {
     setEditingTask(task);
+    setFormError("");
 
     setNewTask({
       title: task.title,
@@ -100,18 +117,30 @@ function Tasks() {
   };
 
   // Update task
-  const handleUpdateTask = (e) => {
+  const handleUpdateTask = async (e) => {
     e.preventDefault();
 
-    if (!newTask.title.trim() || !editingTask) return;
+    if (!newTask.title.trim() || !editingTask) {
+      return setFormError("Task name is required");
+    }
 
-    updateTask(editingTask.id, {
-      title: newTask.title.trim(),
-      date: newTask.date,
-      time: newTask.time,
-    });
+    setSubmitting(true);
+    setFormError("");
 
-    closeForm();
+    try {
+      await updateTask(editingTask.id, {
+        title: newTask.title.trim(),
+        date: newTask.date,
+        time: newTask.time,
+      });
+      closeForm();
+    } catch (err) {
+      setFormError(
+        err.response?.data?.message || "Failed to update task. Please try again."
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Filter
@@ -129,6 +158,7 @@ function Tasks() {
 
   // Format date
   const formatDate = (date) => {
+    if (!date) return "";
     return new Date(
       date + "T00:00:00"
     ).toLocaleDateString("en-IN", {
@@ -230,6 +260,7 @@ function Tasks() {
             <button
               onClick={() => {
                 setEditingTask(null);
+                setFormError("");
                 setNewTask({
                   title: "",
                   date: today,
@@ -244,6 +275,13 @@ function Tasks() {
 
           </div>
         </div>
+
+        {/* Global Error Banner if any */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mt-6 text-sm">
+            {error}
+          </div>
+        )}
 
         {/* Filters */}
         <div className="bg-white rounded-xl shadow-sm p-4 mt-8 flex gap-3">
@@ -296,34 +334,31 @@ function Tasks() {
 
           <div className="mt-5 space-y-3">
 
-            {filteredTasks.length === 0 ? (
-
+            {loading ? (
+              <p className="text-slate-500 text-center py-6">
+                Loading tasks...
+              </p>
+            ) : filteredTasks.length === 0 ? (
               <p className="text-slate-500 text-center py-6">
                 No tasks found.
               </p>
-
             ) : (
-
               filteredTasks.map((task) => (
-
                 <div
                   key={task.id}
                   className="flex items-center justify-between p-4 rounded-lg bg-slate-50"
                 >
-
                   <div className="flex items-center gap-4">
-
                     <input
                       type="checkbox"
                       checked={task.completed}
                       onChange={() =>
                         toggleTask(task.id)
                       }
-                      className="w-4 h-4"
+                      className="w-4 h-4 cursor-pointer"
                     />
 
                     <div>
-
                       <p
                         className={
                           task.completed
@@ -335,20 +370,13 @@ function Tasks() {
                       </p>
 
                       <p className="text-sm text-slate-500 mt-1">
-
                         {formatDate(task.date)}
-
-                        {task.time &&
-                          ` • ${formatTime(task.time)}`}
-
+                        {task.time && ` • ${formatTime(task.time)}`}
                       </p>
-
                     </div>
-
                   </div>
 
                   <div className="flex items-center gap-4">
-
                     <button
                       onClick={() =>
                         handleEditTask(task)
@@ -366,11 +394,8 @@ function Tasks() {
                     >
                       Delete
                     </button>
-
                   </div>
-
                 </div>
-
               ))
             )}
 
@@ -379,13 +404,10 @@ function Tasks() {
 
         {/* Add / Edit Task Modal */}
         {showForm && (
-
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center px-4">
-
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center px-4 z-50">
             <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
 
               <div className="flex justify-between items-center mb-6">
-
                 <h3 className="text-2xl font-bold text-slate-800">
                   {editingTask
                     ? "Edit Task"
@@ -394,12 +416,17 @@ function Tasks() {
 
                 <button
                   onClick={closeForm}
-                  className="text-slate-500 text-xl"
+                  className="text-slate-500 text-xl hover:text-slate-700"
                 >
                   ✕
                 </button>
-
               </div>
+
+              {formError && (
+                <p className="text-red-500 text-sm mb-4 bg-red-50 p-2 rounded">
+                  {formError}
+                </p>
+              )}
 
               <form
                 onSubmit={
@@ -409,10 +436,8 @@ function Tasks() {
                 }
                 className="space-y-5"
               >
-
                 {/* Task Name */}
                 <div>
-
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Task Name
                   </label>
@@ -423,15 +448,14 @@ function Tasks() {
                     value={newTask.title}
                     onChange={handleChange}
                     placeholder="What do you need to do?"
-                    className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={submitting}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50"
                     required
                   />
-
                 </div>
 
                 {/* Date */}
                 <div>
-
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Date
                   </label>
@@ -441,15 +465,14 @@ function Tasks() {
                     name="date"
                     value={newTask.date}
                     onChange={handleChange}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={submitting}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50"
                     required
                   />
-
                 </div>
 
                 {/* Time */}
                 <div>
-
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Time
                   </label>
@@ -459,36 +482,36 @@ function Tasks() {
                     name="time"
                     value={newTask.time}
                     onChange={handleChange}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={submitting}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50"
                   />
-
                 </div>
 
                 <div className="flex gap-3 pt-2">
                   <button
                     type="button"
                     onClick={closeForm}
-                    className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-lg hover:bg-slate-200 transition font-medium"
+                    disabled={submitting}
+                    className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-lg hover:bg-slate-200 transition font-medium disabled:opacity-60"
                   >
                     Cancel
                   </button>
 
                   <button
                     type="submit"
-                    className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-medium"
+                    disabled={submitting}
+                    className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-60"
                   >
-                    {editingTask
+                    {submitting
+                      ? "Saving..."
+                      : editingTask
                       ? "Save Changes"
                       : "Add Task"}
                   </button>
                 </div>
-
               </form>
-
             </div>
-
           </div>
-
         )}
 
       </main>

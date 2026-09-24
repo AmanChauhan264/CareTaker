@@ -16,11 +16,14 @@ function Events() {
     addEvent,
     updateEvent,
     deleteEvent,
+    loading,
+    error,
   } = useEvents();
 
   const [showForm, setShowForm] = useState(false);
-
   const [editingEvent, setEditingEvent] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
 
   const [newEvent, setNewEvent] = useState({
     title: "",
@@ -35,22 +38,41 @@ function Events() {
       ...newEvent,
       [e.target.name]: e.target.value,
     });
+    setFormError("");
   };
 
   // Add event
-  const handleAddEvent = (e) => {
+  const handleAddEvent = async (e) => {
     e.preventDefault();
 
-    if (!newEvent.title.trim()) return;
+    if (!newEvent.title.trim()) {
+      return setFormError("Event name is required");
+    }
 
-    addEvent(newEvent);
+    setSubmitting(true);
+    setFormError("");
 
-    resetForm();
+    try {
+      await addEvent({
+        title: newEvent.title.trim(),
+        date: newEvent.date,
+        time: newEvent.time,
+        description: newEvent.description,
+      });
+      resetForm();
+    } catch (err) {
+      setFormError(
+        err.response?.data?.message || "Failed to create event. Please try again."
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Start editing
   const handleEditEvent = (event) => {
     setEditingEvent(event);
+    setFormError("");
 
     setNewEvent({
       title: event.title,
@@ -63,19 +85,31 @@ function Events() {
   };
 
   // Update event
-  const handleUpdateEvent = (e) => {
+  const handleUpdateEvent = async (e) => {
     e.preventDefault();
 
-    if (!newEvent.title.trim()) return;
+    if (!newEvent.title.trim()) {
+      return setFormError("Event name is required");
+    }
 
-    updateEvent(editingEvent.id, {
-      title: newEvent.title,
-      date: newEvent.date,
-      time: newEvent.time,
-      description: newEvent.description,
-    });
+    setSubmitting(true);
+    setFormError("");
 
-    resetForm();
+    try {
+      await updateEvent(editingEvent.id, {
+        title: newEvent.title.trim(),
+        date: newEvent.date,
+        time: newEvent.time,
+        description: newEvent.description,
+      });
+      resetForm();
+    } catch (err) {
+      setFormError(
+        err.response?.data?.message || "Failed to update event. Please try again."
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Reset form
@@ -88,11 +122,14 @@ function Events() {
     });
 
     setEditingEvent(null);
+    setFormError("");
+    setSubmitting(false);
     setShowForm(false);
   };
 
   // Format date
   const formatDate = (date) => {
+    if (!date) return "";
     return new Date(
       date + "T00:00:00"
     ).toLocaleDateString("en-IN", {
@@ -184,6 +221,7 @@ function Events() {
           <button
             onClick={() => {
               setEditingEvent(null);
+              setFormError("");
               setShowForm(true);
             }}
             className="bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700 transition"
@@ -192,6 +230,13 @@ function Events() {
           </button>
 
         </div>
+
+        {/* Global Error Banner if any */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mt-6 text-sm">
+            {error}
+          </div>
+        )}
 
         {/* Event List */}
         <div className="bg-white rounded-xl shadow-sm mt-8 p-6">
@@ -202,40 +247,33 @@ function Events() {
 
           <div className="mt-5 space-y-4">
 
-            {events.length === 0 ? (
-
+            {loading ? (
+              <p className="text-slate-500 text-center py-6">
+                Loading events...
+              </p>
+            ) : events.length === 0 ? (
               <p className="text-slate-500 text-center py-6">
                 No events added yet.
               </p>
-
             ) : (
-
               events.map((event) => (
-
                 <div
                   key={event.id}
                   className="flex items-center justify-between p-5 rounded-lg bg-slate-50"
                 >
-
                   <div className="flex items-start gap-4">
-
                     <div className="text-2xl">
                       📅
                     </div>
 
                     <div>
-
                       <h4 className="font-semibold text-slate-800">
                         {event.title}
                       </h4>
 
                       <p className="text-sm text-slate-500 mt-1">
-
                         {formatDate(event.date)}
-
-                        {event.time &&
-                          ` • ${formatTime(event.time)}`}
-
+                        {event.time && ` • ${formatTime(event.time)}`}
                       </p>
 
                       {event.description && (
@@ -243,13 +281,10 @@ function Events() {
                           {event.description}
                         </p>
                       )}
-
                     </div>
-
                   </div>
 
                   <div className="flex items-center gap-4">
-
                     <button
                       onClick={() =>
                         handleEditEvent(event)
@@ -267,13 +302,9 @@ function Events() {
                     >
                       Delete
                     </button>
-
                   </div>
-
                 </div>
-
               ))
-
             )}
 
           </div>
@@ -282,13 +313,10 @@ function Events() {
 
         {/* Add / Edit Event Modal */}
         {showForm && (
-
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center px-4">
-
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center px-4 z-50">
             <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
 
               <div className="flex justify-between items-center mb-6">
-
                 <h3 className="text-2xl font-bold text-slate-800">
                   {editingEvent
                     ? "Edit Event"
@@ -297,12 +325,17 @@ function Events() {
 
                 <button
                   onClick={resetForm}
-                  className="text-slate-500 text-xl"
+                  className="text-slate-500 text-xl hover:text-slate-700"
                 >
                   ✕
                 </button>
-
               </div>
+
+              {formError && (
+                <p className="text-red-500 text-sm mb-4 bg-red-50 p-2 rounded">
+                  {formError}
+                </p>
+              )}
 
               <form
                 onSubmit={
@@ -312,10 +345,8 @@ function Events() {
                 }
                 className="space-y-5"
               >
-
                 {/* Event Name */}
                 <div>
-
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Event Name
                   </label>
@@ -326,15 +357,14 @@ function Events() {
                     value={newEvent.title}
                     onChange={handleChange}
                     placeholder="What is the event?"
-                    className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={submitting}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50"
                     required
                   />
-
                 </div>
 
                 {/* Date */}
                 <div>
-
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Date
                   </label>
@@ -344,15 +374,14 @@ function Events() {
                     name="date"
                     value={newEvent.date}
                     onChange={handleChange}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={submitting}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50"
                     required
                   />
-
                 </div>
 
                 {/* Time */}
                 <div>
-
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Time
                   </label>
@@ -362,14 +391,13 @@ function Events() {
                     name="time"
                     value={newEvent.time}
                     onChange={handleChange}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={submitting}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50"
                   />
-
                 </div>
 
                 {/* Description */}
                 <div>
-
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Description
                   </label>
@@ -380,9 +408,9 @@ function Events() {
                     onChange={handleChange}
                     placeholder="Add some details..."
                     rows="3"
-                    className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                    disabled={submitting}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none disabled:bg-slate-50"
                   />
-
                 </div>
 
                 {/* Actions */}
@@ -390,31 +418,30 @@ function Events() {
                   <button
                     type="button"
                     onClick={resetForm}
-                    className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-lg hover:bg-slate-200 transition font-medium"
+                    disabled={submitting}
+                    className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-lg hover:bg-slate-200 transition font-medium disabled:opacity-60"
                   >
                     Cancel
                   </button>
 
                   <button
                     type="submit"
-                    className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-medium"
+                    disabled={submitting}
+                    className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-60"
                   >
-                    {editingEvent
+                    {submitting
+                      ? "Saving..."
+                      : editingEvent
                       ? "Save Changes"
                       : "Add Event"}
                   </button>
                 </div>
-
               </form>
-
             </div>
-
           </div>
-
         )}
 
       </main>
-
     </div>
   );
 }

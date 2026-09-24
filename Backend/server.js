@@ -6,6 +6,8 @@ import cors from "cors";
 import mongoose from "mongoose";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
+import taskRoutes from "./routes/taskRoutes.js";
+import eventRoutes from "./routes/eventRoutes.js";
 
 const app = express();
 
@@ -72,6 +74,12 @@ app.get("/api/health", (req, res) => {
 
 // Authentication routes
 app.use("/api/auth", authRoutes);
+
+// Task routes
+app.use("/api/tasks", taskRoutes);
+
+// Event routes
+app.use("/api/events", eventRoutes);
 
 // 404 handler for undefined routes
 app.use((req, res) => {

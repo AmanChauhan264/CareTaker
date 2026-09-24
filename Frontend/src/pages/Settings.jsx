@@ -6,34 +6,40 @@ import { useAuth } from "../context/AuthContext";
 function Settings() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { tasks } = useTasks();
-  const { events } = useEvents();
+  const { tasks, deleteTask } = useTasks();
+  const { events, deleteEvent } = useEvents();
 
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
 
-  const handleClearTasks = () => {
+  const handleClearTasks = async () => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete all tasks?"
     );
 
     if (!confirmDelete) return;
 
-    localStorage.removeItem("caretaker_tasks");
-    window.location.reload();
+    try {
+      await Promise.all(tasks.map((task) => deleteTask(task.id)));
+    } catch (err) {
+      console.error("Failed to delete all tasks:", err);
+    }
   };
 
-  const handleClearEvents = () => {
+  const handleClearEvents = async () => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete all events?"
     );
 
     if (!confirmDelete) return;
 
-    localStorage.removeItem("caretaker_events");
-    window.location.reload();
+    try {
+      await Promise.all(events.map((event) => deleteEvent(event.id)));
+    } catch (err) {
+      console.error("Failed to delete all events:", err);
+    }
   };
 
   const handleClearReminders = () => {
@@ -245,7 +251,7 @@ function Settings() {
           </h3>
 
           <p className="text-slate-500 mt-2">
-            Manage the tasks and events stored in this browser.
+            Manage your tasks and events data in CARETAKER.
           </p>
 
 

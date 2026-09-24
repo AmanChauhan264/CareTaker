@@ -3,134 +3,174 @@ import {
   useContext,
   useEffect,
   useState,
+  useCallback,
 } from "react";
+import API from "../services/api";
+import { useAuth } from "./AuthContext";
 
 const TaskContext = createContext();
 
 export function TaskProvider({ children }) {
-  const now = new Date();
-  const today =
-    now.getFullYear() +
-    "-" +
-    String(now.getMonth() + 1).padStart(2, "0") +
-    "-" +
-    String(now.getDate()).padStart(2, "0");
+  const { isAuthenticated, user } = useAuth();
 
-  // Load tasks from localStorage
-  const [tasks, setTasks] = useState(() => {
-    const savedTasks = localStorage.getItem("caretaker_tasks");
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-    if (savedTasks) {
-      return JSON.parse(savedTasks);
+  // Fetch tasks from MongoDB backend
+  const fetchTasks = useCallback(async () => {
+    if (!isAuthenticated) {
+      setTasks([]);
+      setLoading(false);
+      return;
     }
 
-    return [
-      {
-        id: 1,
-        title: "Complete DSA Practice",
-        date: today,
-        time: "19:00",
-        completed: false,
-      },
-      {
-        id: 2,
-        title: "Work on CARETAKER",
-        date: today,
-        time: "20:00",
-        completed: false,
-      },
-      {
-        id: 3,
-        title: "Attend College",
-        date: today,
-        time: "10:00",
-        completed: true,
-      },
-    ];
-  });
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await API.get("/tasks");
+      if (response.data.success) {
+        const normalized = response.data.tasks.map((task) => ({
+          ...task,
+          id: task.id || task._id,
+        }));
+        setTasks(normalized);
+      }
+    } catch (err) {
+      console.error("Failed to fetch tasks from backend:", err);
+      setError(
+        err.response?.data?.message || "Failed to load tasks from server."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated]);
 
-  // Save tasks whenever they change
+  // Load tasks on auth change and cleanup legacy localStorage key
   useEffect(() => {
-    localStorage.setItem(
-      "caretaker_tasks",
-      JSON.stringify(tasks)
-    );
-  }, [tasks]);
+    fetchTasks();
+    localStorage.removeItem("caretaker_tasks");
+  }, [fetchTasks, user?.id]);
 
-  // Add task
-  const addTask = (task) => {
-    setTasks((prev) => [
-      ...prev,
-      {
-        ...task,
-        id: Date.now(),
-        completed: false,
-      },
-    ]);
+  // Add task via backend API
+  const addTask = async (taskData) => {
+    try {
+      setError(null);
+      const response = await API.post("/tasks", taskData);
+      if (response.data.success) {
+        const newTask = {
+          ...response.data.task,
+          id: response.data.task.id || response.data.task._id,
+        };
+        setTasks((prev) => [newTask, ...prev]);
+        return newTask;
+      }
+    } catch (err) {
+      console.error("Error creating task:", err);
+      const msg = err.response?.data?.message || "Failed to create task.";
+      setError(msg);
+      throw err;
+    }
   };
 
-  // Update task
-  const updateTask = (id, updatedTask) => {
-    setTasks((prev) => {
-      const existingTask = prev.find((task) => task.id === id);
+  // Update task via backend API
+  const updateTask = async (id, updatedTask) => {
+    try {
+      setError(null);
+      const response = await API.put(`/tasks/${id}`, updatedTask);
+      if (response.data.success) {
+        const updated = {
+          ...response.data.task,
+          id: response.data.task.id || response.data.task._id,
+        };
 
-      if (existingTask) {
-        const dateOrTimeChanged =
-          (updatedTask.date && updatedTask.date !== existingTask.date) ||
-          (updatedTask.time !== undefined &&
-            updatedTask.time !== existingTask.time);
-
-        if (dateOrTimeChanged) {
-          // Clear any active snooze for this task so it doesn't trigger on the old schedule
+        // If date or time changed, clear snooze and prior reminder history
+        if (
+          updatedTask.date !== undefined ||
+          updatedTask.time !== undefined
+        ) {
           localStorage.removeItem(`snooze_task_${id}`);
-
-          // Clear previous reminder tracking flags for this task
           Object.keys(localStorage).forEach((key) => {
             if (key.startsWith(`task_reminded_${id}_`)) {
               localStorage.removeItem(key);
             }
           });
         }
+
+        setTasks((prev) =>
+          prev.map((task) =>
+            task.id === id || task._id === id ? updated : task
+          )
+        );
+        return updated;
       }
-
-      return prev.map((task) =>
-        task.id === id
-          ? {
-              ...task,
-              ...updatedTask,
-              id: task.id, // Preserve task ID
-              completed: task.completed, // Preserve completed status
-            }
-          : task
-      );
-    });
+    } catch (err) {
+      console.error("Error updating task:", err);
+      const msg = err.response?.data?.message || "Failed to update task.";
+      setError(msg);
+      throw err;
+    }
   };
 
-  // Complete / uncomplete task
-  const toggleTask = (id) => {
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === id
-          ? {
-              ...task,
-              completed: !task.completed,
-            }
-          : task
-      )
-    );
+  // Toggle task completion via backend API
+  const toggleTask = async (id) => {
+    try {
+      setError(null);
+      const response = await API.patch(`/tasks/${id}/toggle`);
+      if (response.data.success) {
+        const updated = {
+          ...response.data.task,
+          id: response.data.task.id || response.data.task._id,
+        };
+
+        setTasks((prev) =>
+          prev.map((task) =>
+            task.id === id || task._id === id ? updated : task
+          )
+        );
+        return updated;
+      }
+    } catch (err) {
+      console.error("Error toggling task completion:", err);
+      const msg = err.response?.data?.message || "Failed to toggle task.";
+      setError(msg);
+      throw err;
+    }
   };
 
-  // Delete task
-  const deleteTask = (id) => {
-    setTasks((prev) =>
-      prev.filter((task) => task.id !== id)
-    );
+  // Delete task via backend API
+  const deleteTask = async (id) => {
+    try {
+      setError(null);
+      const response = await API.delete(`/tasks/${id}`);
+      if (response.data.success) {
+        setTasks((prev) =>
+          prev.filter((task) => task.id !== id && task._id !== id)
+        );
+
+        // Clear any active snooze or reminder marker for deleted task
+        localStorage.removeItem(`snooze_task_${id}`);
+        Object.keys(localStorage).forEach((key) => {
+          if (key.startsWith(`task_reminded_${id}_`)) {
+            localStorage.removeItem(key);
+          }
+        });
+      }
+    } catch (err) {
+      console.error("Error deleting task:", err);
+      const msg = err.response?.data?.message || "Failed to delete task.";
+      setError(msg);
+      throw err;
+    }
   };
 
   return (
     <TaskContext.Provider
       value={{
         tasks,
+        loading,
+        error,
+        fetchTasks,
         addTask,
         updateTask,
         toggleTask,
