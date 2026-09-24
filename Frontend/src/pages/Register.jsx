@@ -1,9 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { useAuth } from "../context/AuthContext";
 
 function Register() {
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -15,6 +17,7 @@ function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -25,7 +28,7 @@ function Register() {
     setError("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.fullName.trim()) {
@@ -49,16 +52,28 @@ function Register() {
     }
 
     setError("");
+    setLoading(true);
 
-    console.log("Registration Successful:", formData);
-
-    navigate("/dashboard");
+    try {
+      await register(
+        formData.fullName.trim(),
+        formData.email.trim(),
+        formData.password
+      );
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Registration failed:", err);
+      setError(
+        err.response?.data?.message || "Registration failed. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4">
       <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl p-10">
-
         <h1 className="text-3xl font-bold text-center text-blue-600">
           CARETAKER
         </h1>
@@ -68,7 +83,6 @@ function Register() {
         </p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-
           {/* Full Name */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -81,7 +95,8 @@ function Register() {
               value={formData.fullName}
               onChange={handleChange}
               placeholder="Enter your name"
-              className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={loading}
+              className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50"
             />
           </div>
 
@@ -97,7 +112,8 @@ function Register() {
               value={formData.email}
               onChange={handleChange}
               placeholder="Enter your email"
-              className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={loading}
+              className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50"
             />
           </div>
 
@@ -114,7 +130,8 @@ function Register() {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Create a password"
-                className="w-full border border-slate-300 rounded-lg px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading}
+                className="w-full border border-slate-300 rounded-lg px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50"
               />
 
               <button
@@ -140,7 +157,8 @@ function Register() {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 placeholder="Confirm password"
-                className="w-full border border-slate-300 rounded-lg px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading}
+                className="w-full border border-slate-300 rounded-lg px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50"
               />
 
               <button
@@ -169,11 +187,11 @@ function Register() {
           {/* Submit */}
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition duration-300"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition duration-300 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Create Account
+            {loading ? "Creating Account..." : "Create Account"}
           </button>
-
         </form>
 
         <p className="text-center text-slate-600 mt-6">
@@ -185,7 +203,6 @@ function Register() {
             Login
           </Link>
         </p>
-
       </div>
     </div>
   );

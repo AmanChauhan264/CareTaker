@@ -1,10 +1,18 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTasks } from "../context/TaskContext";
 import { useEvents } from "../context/EventContext";
+import { useAuth } from "../context/AuthContext";
 
 function Settings() {
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const { tasks } = useTasks();
   const { events } = useEvents();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   const handleClearTasks = () => {
     const confirmDelete = window.confirm(
@@ -120,9 +128,44 @@ function Settings() {
         </div>
 
 
-        {/* Application Information */}
-
+        {/* Account Information */}
         <div className="bg-white rounded-xl shadow-sm mt-8 p-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-xl font-semibold text-slate-800">
+                Account Information
+              </h3>
+              <p className="text-slate-500 text-sm mt-1">
+                Your profile credentials in CARETAKER.
+              </p>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg hover:bg-red-100 transition font-medium text-sm"
+            >
+              Log Out
+            </button>
+          </div>
+
+          <div className="mt-5 space-y-4">
+            <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
+              <span className="text-slate-600">Full Name</span>
+              <span className="font-semibold text-slate-800">
+                {user?.name || "User"}
+              </span>
+            </div>
+
+            <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
+              <span className="text-slate-600">Email Address</span>
+              <span className="font-medium text-slate-800">
+                {user?.email || "Not available"}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Application Information */}
+        <div className="bg-white rounded-xl shadow-sm mt-6 p-6">
 
           <h3 className="text-xl font-semibold text-slate-800">
             Application Information
